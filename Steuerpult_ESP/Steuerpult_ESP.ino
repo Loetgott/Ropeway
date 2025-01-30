@@ -74,31 +74,44 @@ void OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
 
 // Callback für den Empfang von Daten
 void OnDataReceived(uint8_t *mac_addr, uint8_t *incomingData, uint8_t len) {
-  int id;
-  memcpy(&id, incomingData, sizeof(int));
-  if (id == 0 && len == sizeof(struct_message_sensors)) {
+  char macStr[18];
+  snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X", 
+           mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+  
+  Serial.print("Daten empfangen von MAC-Adresse: ");
+  Serial.println(macStr);
+
+  // Überprüft, ob die Nachricht die richtige Länge hat
+  if (len == sizeof(struct_message_sensors)) {
     memcpy(&receivedData.sensor_data, incomingData, sizeof(struct_message_sensors));
-    if (receivedData.sensor_data.station == 0) {
-      sensorData0.id = receivedData.sensor_data.id;
-      sensorData0.station = receivedData.sensor_data.station;
-      sensorData0.sensor1 = receivedData.sensor_data.sensor1;
-      sensorData0.sensor2 = receivedData.sensor_data.sensor2;
-      sensorData0.sensor3 = receivedData.sensor_data.sensor3;
-      sensorData0.sensor4 = receivedData.sensor_data.sensor4;
-      Serial.println("Sensordaten von Station 0 empfangen: " + (String)sensorData0.sensor1 + (String)sensorData0.sensor2 + (String)sensorData0.sensor3 + (String)sensorData0.sensor4);
+
+    // MAC-Adresse überprüfen und Station zuordnen
+    if (strcmp(macStr, "BC:FF:4D:02:05:97") == 0) {  // MAC-Adresse der Station 0
+      Serial.println("Station 0 erkannt.");
+      // Daten für Station 0 speichern
+      sensorData0 = receivedData.sensor_data;
+      Serial.println("Sensordaten von Station 0 empfangen: " + 
+                     (String)sensorData0.sensor1 + ", " + 
+                     (String)sensorData0.sensor2 + ", " + 
+                     (String)sensorData0.sensor3 + ", " + 
+                     (String)sensorData0.sensor4);
       esp_now_send(slaveMacs[0], (uint8_t *)&sensorData0, sizeof(sensorData0));
-    } else if (receivedData.sensor_data.station == 1) {
-      sensorData1.id = receivedData.sensor_data.id;
-      sensorData1.station = receivedData.sensor_data.station;
-      sensorData1.sensor1 = receivedData.sensor_data.sensor1;
-      sensorData1.sensor2 = receivedData.sensor_data.sensor2;
-      sensorData1.sensor3 = receivedData.sensor_data.sensor3;
-      sensorData1.sensor4 = receivedData.sensor_data.sensor4;
-      Serial.println("Sensordaten von Station 1 empfangen: " + (String)sensorData0.sensor1 + (String)sensorData0.sensor2 + (String)sensorData0.sensor3 + (String)sensorData0.sensor4);
+    } else if (strcmp(macStr, "C4:5B:BE:4E:94:CC") == 0) {  // MAC-Adresse der Station 1
+      Serial.println("Station 1 erkannt.");
+      // Daten für Station 1 speichern
+      sensorData1 = receivedData.sensor_data;
+      Serial.println("Sensordaten von Station 1 empfangen: " + 
+                     (String)sensorData1.sensor1 + ", " + 
+                     (String)sensorData1.sensor2 + ", " + 
+                     (String)sensorData1.sensor3 + ", " + 
+                     (String)sensorData1.sensor4);
       esp_now_send(slaveMacs[2], (uint8_t *)&sensorData1, sizeof(sensorData1));
+    } else {
+      Serial.println("Unbekannte Station. Daten verworfen.");
     }
   }
 }
+
 
 millisDelay speedDelay;
 int speedDelayDuration = 200;

@@ -7,19 +7,19 @@ millisDelay sensor2Delay;
 millisDelay sensor3Delay;
 millisDelay sensor4Delay;
 
-int sensorDelay = 2000;
+int sensorDelay = 2000 ;
 
 int sensor1 = D3;
-int sensor2 = D4;
-int sensor3 = D2;
-int sensor4 = D1;
+int sensor2 = D2;
+int sensor3 = D4;
+int sensor4 = D0;
 
 // Empfänger MAC-Adresse
 uint8_t broadcastAddress[] = { 0x50, 0x02, 0x91, 0xFA, 0xF5, 0x67 };
 
 typedef struct struct_message_sensors {
-  int id = 0;
-  int station = 1;
+  int id;
+  int station;
   bool sensor1;
   bool sensor2;
   bool sensor3;
@@ -42,7 +42,6 @@ void onSent(uint8_t *mac_addr, uint8_t sendStatus) {
 void setup() {
   Serial.begin(115200);
 
-  // Sensoren als Eingänge definieren
   pinMode(sensor1, INPUT_PULLUP);
   pinMode(sensor2, INPUT_PULLUP);
   pinMode(sensor3, INPUT_PULLUP);
@@ -63,6 +62,9 @@ void setup() {
 
   // Empfänger hinzufügen
   esp_now_add_peer(broadcastAddress, ESP_NOW_ROLE_SLAVE, 1, NULL, 0);
+
+  sensorData.id = 0;
+  sensorData.station = 1;
 }
 
 void loop() {

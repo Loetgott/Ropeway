@@ -3,12 +3,12 @@
 #include <millisDelay.h>
 #include <SpeedStepper.h>
 
-#define UFRStepperPin D4
-#define UFLStepperPin D0
-#define UFHStepperPin D7
-#define BLStepperPin D6
-#define BRStepperPin D5
-#define dirPin D1
+#define UFRStepperPin D7
+#define UFLStepperPin D6
+#define UFHStepperPin D5
+#define BLStepperPin D4
+#define BRStepperPin D0
+#define dirPin D8
 
 #define myMaxSpeed 3000
 #define haltDecel 400
@@ -129,7 +129,7 @@ void onReceive(uint8_t *mac, uint8_t *incomingData, uint8_t len) {
       }
     }
     if (receivedControlData.abfahrt) {
-      setStepperDirection(receivedControlData.fahrtrichtung);
+      //setStepperDirection(receivedControlData.fahrtrichtung);
       abfahrt();
       starting = true;
     }
@@ -144,14 +144,14 @@ void onReceive(uint8_t *mac, uint8_t *incomingData, uint8_t len) {
   }
 }
 
-SpeedStepper UFRStepper(UFRStepperPin, dirPin);
-SpeedStepper UFLStepper(UFLStepperPin, dirPin);
-SpeedStepper UFHStepper(UFHStepperPin, dirPin);
-SpeedStepper BRStepper(BLStepperPin, dirPin);
-SpeedStepper BLStepper(BRStepperPin, dirPin);
+SpeedStepper UFRStepper(UFRStepperPin, D7);
+SpeedStepper UFLStepper(UFLStepperPin, D7);
+SpeedStepper UFHStepper(UFHStepperPin, D7);
+SpeedStepper BRStepper(BLStepperPin, D7);
+SpeedStepper BLStepper(BRStepperPin, D7);
 
 void setup() {
-  pinMode(D3, OUTPUT);
+  pinMode(dirPin, OUTPUT);
   Serial.begin(9600);
   // WLAN im STA-Modus starten
   WiFi.mode(WIFI_STA);
@@ -168,8 +168,8 @@ void setup() {
   initializeStepper(UFRStepper, myMaxSpeed * UFSpeedFactor, 500);
   initializeStepper(UFLStepper, myMaxSpeed * UFSpeedFactor, 500);
   initializeStepper(UFHStepper, myMaxSpeed * UFSpeedFactor, 500);
-  initializeStepper(BRStepper, myMaxSpeed * BVSpeedFactor, 500);
-  initializeStepper(BLStepper, myMaxSpeed * BVSpeedFactor, 500);
+  initializeStepper(BRStepper, myMaxSpeed * BSpeedFactor, 500);
+  initializeStepper(BLStepper, myMaxSpeed * BSpeedFactor, 500);
 
   runDelay.start(RUN_DELAY_MS);
   setStepperSpeed(0);
@@ -187,16 +187,16 @@ void setStepperAcceleration(float acceleration) {
   UFRStepper.setAcceleration(acceleration * UFSpeedFactor);
   UFLStepper.setAcceleration(acceleration * UFSpeedFactor);
   UFHStepper.setAcceleration(acceleration * UFSpeedFactor);
-  BRStepper.setAcceleration(acceleration * BVSpeedFactor);
-  BLStepper.setAcceleration(acceleration * BVSpeedFactor);
+  BRStepper.setAcceleration(acceleration * BSpeedFactor);
+  BLStepper.setAcceleration(acceleration * BSpeedFactor);
 }
 
 void setStepperMaxSpeed(float speed){
   UFRStepper.setAcceleration(speed * UFSpeedFactor);
   UFLStepper.setAcceleration(speed * UFSpeedFactor);
   UFHStepper.setAcceleration(speed * UFSpeedFactor);
-  BRStepper.setAcceleration(speed * BVSpeedFactor);
-  BLStepper.setAcceleration(speed * BVSpeedFactor);
+  BRStepper.setAcceleration(speed * BSpeedFactor);
+  BLStepper.setAcceleration(speed * BSpeedFactor);
 }
 
 void setStepperSpeed(float speed) {
@@ -232,7 +232,7 @@ void setStepperDirection(bool direction) {
   fahrtrichtung = direction; 
   if (UFHStepper.getSpeed() == 0 && direction) {
     Serial.println("Fahrtrichtung vorwaerts");
-    digitalWrite(D3, HIGH);
+    digitalWrite(dirPin, HIGH);
     UFRStepper.setDirForward();
     UFLStepper.setDirForward();
     UFHStepper.setDirForward();
@@ -240,7 +240,7 @@ void setStepperDirection(bool direction) {
     BLStepper.setDirForward();
   } else if (UFHStepper.getSpeed() == 0) {
     Serial.println("Fahrtrichtung rueckwaerts");
-    digitalWrite(D3, LOW);
+    digitalWrite(dirPin, LOW);
     UFRStepper.setDirReverse();
     UFLStepper.setDirReverse();
     UFHStepper.setDirReverse();

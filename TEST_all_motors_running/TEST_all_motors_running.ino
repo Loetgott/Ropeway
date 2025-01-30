@@ -1,6 +1,5 @@
 #include <AccelStepper.h>
 
-#define seilStepperPin D8
 #define UFRStepperPin D7
 #define UFLStepperPin D6
 #define UFHStepperPin D5
@@ -12,7 +11,6 @@
 #define reducedSpeed 500   // Reduzierte Geschwindigkeit, wenn das Ziel näher rückt
 #define acceleration 400     // Beschleunigung
 
-AccelStepper seilStepper(1, seilStepperPin, dirPin);
 AccelStepper UFRStepper(1, UFRStepperPin, dirPin);
 AccelStepper UFLStepper(1, UFLStepperPin, dirPin);
 AccelStepper UFHStepper(1, UFHStepperPin, dirPin);
@@ -20,10 +18,7 @@ AccelStepper BLStepper(1, BLStepperPin, dirPin);
 AccelStepper BRStepper(1, BRStepperPin, dirPin);
 
 void setup() {
-  // Maximalgeschwindigkeit und Beschleunigung für alle Motoren einstellen
-  seilStepper.setMaxSpeed(initialSpeed);
-  seilStepper.setAcceleration(acceleration);
-  
+  // Maximalgeschwindigkeit und Beschleunigung für alle Motoren einstellen  
   UFRStepper.setMaxSpeed(initialSpeed);
   UFRStepper.setAcceleration(acceleration);
   
@@ -40,7 +35,6 @@ void setup() {
   BRStepper.setAcceleration(acceleration);
 
   // Zielpositionen festlegen, um die Bewegung zu starten
-  seilStepper.move(100000);
   UFRStepper.move(100000);
   UFLStepper.move(100000);
   UFHStepper.move(100000);
@@ -50,17 +44,13 @@ void setup() {
 
 void loop() {
   // Motoren bewegen
-  seilStepper.run();
-  UFRStepper.run();
-  UFLStepper.run();
-  UFHStepper.run();
+  //UFRStepper.run();
+  //UFLStepper.run();
+  //UFHStepper.run();
   BLStepper.run();
-  BRStepper.run();
+  //BRStepper.run();
   
   // Überprüfen, ob die Motoren das Ziel annähern, um die Geschwindigkeit anzupassen
-  if (seilStepper.distanceToGo() < 10000) {
-    seilStepper.setMaxSpeed(reducedSpeed);
-  }
   if (UFRStepper.distanceToGo() < 10000) {
     UFRStepper.setMaxSpeed(reducedSpeed);
   }
@@ -78,10 +68,6 @@ void loop() {
   }
 
   // Wenn das Ziel erreicht ist, eine neue Bewegung starten
-  if (seilStepper.distanceToGo() == 0) {
-    seilStepper.move(-100000); // Bewege zurück zum Ausgangspunkt
-    seilStepper.setMaxSpeed(initialSpeed); // Setze die maximale Geschwindigkeit zurück
-  }
   if (UFRStepper.distanceToGo() == 0) {
     UFRStepper.move(-100000);
     UFRStepper.setMaxSpeed(initialSpeed);
