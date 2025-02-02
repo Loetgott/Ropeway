@@ -191,6 +191,8 @@ void loop() {
     Serial.println("Nachricht vom Mega empfangen: " + message);
     String command = split(message, ':', 0);
     String value = split(message, ':', 1);
+    //Serial.println("command: " + command);
+    //Serial.println("value: " + value);
     if (command == "42") { // anwurf
       if (value == "true") {
         Serial.println("anwurf");
