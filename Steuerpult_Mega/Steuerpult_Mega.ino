@@ -66,8 +66,8 @@ void setup() {
   pinMode(52, INPUT_PULLUP);
   pinMode(53, INPUT_PULLUP);
   
-  Serial.begin(115200);  // Serielle Schnittstelle für Debugging
-  Serial1.begin(115200);    // Serielle Schnittstelle für Kommunikation mit ESP8266
+  Serial.begin(9600);  // Serielle Schnittstelle für Debugging
+  Serial1.begin(9600);    // Serielle Schnittstelle für Kommunikation mit ESP8266
   Serial.println("Arduino Mega bereit.");
 }
 
@@ -76,11 +76,11 @@ void loop() {
     if(digitalRead(i) == LOW && !buttonsPushed[i - 38]){
       buttonsPushed[i - 38] = true;
       Serial1.println((String)i + ":true");
-      //Serial.println((String)i + ":true");
+      Serial.println((String)i + ":true");
     }else if(digitalRead(i) == HIGH && buttonsPushed[i - 38]){
       buttonsPushed[i - 38] = false;
       Serial1.println((String)i + ":false");
-      //Serial.println((String)i + ":false");
+      Serial.println((String)i + ":false");
     }
   }
 }

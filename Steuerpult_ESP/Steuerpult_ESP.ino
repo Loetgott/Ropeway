@@ -189,46 +189,50 @@ void loop() {
     digitalWrite(D5, HIGH);
     String message = megaSerial.readStringUntil('\n');
     Serial.println("Nachricht vom Mega empfangen: " + message);
-
     String command = split(message, ':', 0);
     String value = split(message, ':', 1);
-
-    if (command == "42") {
+    if (command == "42") { // anwurf
       if (value == "true") {
+        Serial.println("anwurf");
         anwurf = true;
+        abfahrt = false;
         controlData.abfahrt = false;
         controlData.nothalt = 0;
       }
-    } else if (command == "38") {
+    } else if (command == "38") { // abfahrt
       if (anwurf && value == "true") {
+        abfahrt = true;
+        Serial.println("abfahrt");
         controlData.abfahrt = true;
       }
-    } else if (command == "45") {
-      if (!anwurf && value == "true") {
+    } else if (command == "45") { //fahrtrichtung vorwaerts
+      if (!abfahrt && value == "true") {
+        Serial.println("vorwaerts");
         controlData.fahrtrichtung = true;
       } else {
         controlData.nothalt = 3;
         anwurf = false;
         controlData.abfahrt = false;
-        anwurf = false;
       }
-    } else if (command == "47") {
-      if (!anwurf && value == "true") {
+    } else if (command == "47") { // fahrtrichtung rueckwaerts
+      if (!abfahrt && value == "true") {
+        Serial.println("rueckwaerts");
         controlData.fahrtrichtung = false;
       } else {
         controlData.nothalt = 3;
         anwurf = false;
         controlData.abfahrt = false;
-        anwurf = false;
-      }
-    } else if (command == "40") {
-      if (nothalt == 0 && anwurf && value == "true") {
+      }   
+    } else if (command == "40") { //halt
+      if (nothalt == 0 && value == "true") {
+        Serial.println("halt");
         controlData.nothalt = 1;
         controlData.abfahrt = false;
         anwurf = false;
       }
-    } else if (command == "52") {
-      if (anwurf && value == "true") {
+    } else if (command == "52") { //nothalt
+      if (value == "true") {
+        Serial.println("nothalt");
         controlData.nothalt = 3;
         controlData.abfahrt = false;
         anwurf = false;
