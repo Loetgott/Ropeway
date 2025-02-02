@@ -1,12 +1,11 @@
 #include <ESP8266WiFi.h>
 #include <espnow.h>
-#include <Wire.h>
 #include <SoftwareSerial.h>
 #include <millisDelay.h>
 
 #define NUM_SLAVES 4
 
-SoftwareSerial megaSerial(D1, D2);  // RX, TX (D7 ist GPIO13 für RX, D6 ist GPIO12 für TX, falls später benötigt)
+SoftwareSerial megaSerial(D1, D2);  // RX, TX (D1 für RX, D2 für TX, falls später benötigt)
 
 // MAC-Adressen der vier Slaves (ersetze sie durch die tatsächlichen MACs deiner Slaves)
 uint8_t slaveMacs[NUM_SLAVES][6] = {
@@ -64,10 +63,10 @@ void OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
   //}
   //Serial.print(" Status: ");
   //Serial.println(sendStatus == 0 ? "Erfolgreich" : "Fehlgeschlagen");
-  if(sendStatus != 0){
-    digitalWrite(D3,HIGH);
-  }else{
-    digitalWrite(D5,HIGH);
+  if (sendStatus != 0) {
+    digitalWrite(D3, HIGH);
+  } else {
+    digitalWrite(D5, HIGH);
   }
   digitalWrite(D4, LOW);
 }
@@ -75,9 +74,9 @@ void OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
 // Callback für den Empfang von Daten
 void OnDataReceived(uint8_t *mac_addr, uint8_t *incomingData, uint8_t len) {
   char macStr[18];
-  snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X", 
+  snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X",
            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-  
+
   Serial.print("Daten empfangen von MAC-Adresse: ");
   Serial.println(macStr);
 
@@ -90,21 +89,13 @@ void OnDataReceived(uint8_t *mac_addr, uint8_t *incomingData, uint8_t len) {
       Serial.println("Station 0 erkannt.");
       // Daten für Station 0 speichern
       sensorData0 = receivedData.sensor_data;
-      Serial.println("Sensordaten von Station 0 empfangen: " + 
-                     (String)sensorData0.sensor1 + ", " + 
-                     (String)sensorData0.sensor2 + ", " + 
-                     (String)sensorData0.sensor3 + ", " + 
-                     (String)sensorData0.sensor4);
+      Serial.println("Sensordaten von Station 0 empfangen: " + (String)sensorData0.sensor1 + ", " + (String)sensorData0.sensor2 + ", " + (String)sensorData0.sensor3 + ", " + (String)sensorData0.sensor4);
       esp_now_send(slaveMacs[0], (uint8_t *)&sensorData0, sizeof(sensorData0));
     } else if (strcmp(macStr, "C4:5B:BE:4E:94:CC") == 0) {  // MAC-Adresse der Station 1
       Serial.println("Station 1 erkannt.");
       // Daten für Station 1 speichern
       sensorData1 = receivedData.sensor_data;
-      Serial.println("Sensordaten von Station 1 empfangen: " + 
-                     (String)sensorData1.sensor1 + ", " + 
-                     (String)sensorData1.sensor2 + ", " + 
-                     (String)sensorData1.sensor3 + ", " + 
-                     (String)sensorData1.sensor4);
+      Serial.println("Sensordaten von Station 1 empfangen: " + (String)sensorData1.sensor1 + ", " + (String)sensorData1.sensor2 + ", " + (String)sensorData1.sensor3 + ", " + (String)sensorData1.sensor4);
       esp_now_send(slaveMacs[2], (uint8_t *)&sensorData1, sizeof(sensorData1));
     } else {
       Serial.println("Unbekannte Station. Daten verworfen.");
@@ -161,9 +152,9 @@ void setup() {
   speedDelay.start(speedDelayDuration);
 }
 
-bool anwurf = false;
-bool abfahrt = false;
-int nothalt = 0;
+bool isAnwurf = false;
+bool isAbfahrt = false;
+int nothaltStatus = 0;
 int speed = 3000;
 
 String split(String data, char delimiter, int index) {
@@ -185,57 +176,47 @@ String split(String data, char delimiter, int index) {
 }
 
 void loop() {
-  if (megaSerial.available()) {
+  if (Serial.available() || megaSerial.available()) {
     digitalWrite(D5, HIGH);
-    String message = megaSerial.readStringUntil('\n');
-    Serial.println("Nachricht vom Mega empfangen: " + message);
-    String command = split(message, ':', 0);
-    String value = split(message, ':', 1);
-    if (command == "42") { // anwurf
+    String message = "";
+    String command = "";
+    String value = "";
+
+    if (Serial.available()) {
+      message = Serial.readStringUntil('\n');
+      Serial.println("Nachricht vom PC empfangen: " + message);
+      command = split(message, ':', 0);
+      value = split(message, ':', 1);
+    } else if (megaSerial.available()) {
+      message = megaSerial.readStringUntil('\n');
+      Serial.println("Nachricht vom Mega empfangen: " + message);
+      command = split(message, ':', 0);
+      value = split(message, ':', 1);
+    }
+
+    if (command == "42") {  // anwurf
       if (value == "true") {
-        Serial.println("anwurf");
-        anwurf = true;
-        abfahrt = false;
-        controlData.abfahrt = false;
-        controlData.nothalt = 0;
+        anwurf();
       }
-    } else if (command == "38") { // abfahrt
-      if (anwurf && value == "true") {
-        abfahrt = true;
-        Serial.println("abfahrt");
-        controlData.abfahrt = true;
+    } else if (command == "38") {  // abfahrt
+      if (isAnwurf && value == "true") {
+        abfahrt();
       }
-    } else if (command == "45") { //fahrtrichtung vorwaerts
-      if (!abfahrt && value == "true") {
-        Serial.println("vorwaerts");
-        controlData.fahrtrichtung = true;
-      } else {
-        controlData.nothalt = 3;
-        anwurf = false;
-        controlData.abfahrt = false;
-      }
-    } else if (command == "47") { // fahrtrichtung rueckwaerts
-      if (!abfahrt && value == "true") {
-        Serial.println("rueckwaerts");
-        controlData.fahrtrichtung = false;
-      } else {
-        controlData.nothalt = 3;
-        anwurf = false;
-        controlData.abfahrt = false;
-      }   
-    } else if (command == "40") { //halt
-      if (nothalt == 0 && value == "true") {
-        Serial.println("halt");
-        controlData.nothalt = 1;
-        controlData.abfahrt = false;
-        anwurf = false;
-      }
-    } else if (command == "52") { //nothalt
+    } else if (command == "45") {  //fahrtrichtung vorwaerts
       if (value == "true") {
-        Serial.println("nothalt");
-        controlData.nothalt = 3;
-        controlData.abfahrt = false;
-        anwurf = false;
+        vorwaerts();
+      }
+    } else if (command == "47") {  // fahrtrichtung rueckwaerts
+      if (value == "true") {
+        rueckwaerts();
+      }
+    } else if (command == "40") {  //halt
+      if (value == "true") {
+        halt();
+      }
+    } else if (command == "52") {  //nothalt
+      if (value == "true") {
+        nothalt();
       }
     } else if (command == "speed") {
       if (value != (String)speed && !value.isEmpty()) {
@@ -244,7 +225,6 @@ void loop() {
     }
     esp_now_send(slaveMacs[0], (uint8_t *)&controlData, sizeof(controlData));
     esp_now_send(slaveMacs[2], (uint8_t *)&controlData, sizeof(controlData));
-    Serial.println("---------------------------------------------------------------------------------------------------------------------------------------------------------");
     speedData.speed = speed;
   }
   if (speedDelay.justFinished()) {
@@ -253,75 +233,62 @@ void loop() {
     esp_now_send(slaveMacs[2], (uint8_t *)&speedData, sizeof(speedData));
     speedDelay.restart();
   }
-  if (Serial.available()) {
-    digitalWrite(D5, HIGH);
-    String message = Serial.readStringUntil('\n');
-    Serial.println("Nachricht vom Mega empfangen: " + message);
+  digitalWrite(D5, LOW);
+}
 
-    String command = split(message, ':', 0);
-    String value = split(message, ':', 1);
+void anwurf() {
+  Serial.println("anwurf");
+  megaSerial.println("anwurf");
+  isAnwurf = true;
+  isAbfahrt = false;
+  controlData.abfahrt = false;
+  controlData.nothalt = 0;
+}
 
-    if (command == "42") { // anwurf
-      if (value == "true") {
-        Serial.println("anwurf");
-        anwurf = true;
-        abfahrt = false;
-        controlData.abfahrt = false;
-        controlData.nothalt = 0;
-      }
-    } else if (command == "38") { // abfahrt
-      if (anwurf && value == "true") {
-        abfahrt = true;
-        Serial.println("abfahrt");
-        controlData.abfahrt = true;
-      }
-    } else if (command == "45") { //fahrtrichtung vorwaerts
-      if (!abfahrt && value == "true") {
-        Serial.println("vorwaerts");
-        controlData.fahrtrichtung = true;
-      } else {
-        controlData.nothalt = 3;
-        anwurf = false;
-        controlData.abfahrt = false;
-      }
-    } else if (command == "47") { // fahrtrichtung rueckwaerts
-      if (!abfahrt && value == "true") {
-        Serial.println("rueckwaerts");
-        controlData.fahrtrichtung = false;
-      } else {
-        controlData.nothalt = 3;
-        anwurf = false;
-        controlData.abfahrt = false;
-      }   
-    } else if (command == "40") { //halt
-      if (nothalt == 0 && value == "true") {
-        Serial.println("halt");
-        controlData.nothalt = 1;
-        controlData.abfahrt = false;
-        anwurf = false;
-      }
-    } else if (command == "52") { //nothalt
-      if (value == "true") {
-        Serial.println("nothalt");
-        controlData.nothalt = 3;
-        controlData.abfahrt = false;
-        anwurf = false;
-      }
-    } else if (command == "speed") {
-      if (value != (String)speed && !value.isEmpty()) {
-        speed = value.toInt();
-      }
-    }
-    esp_now_send(slaveMacs[0], (uint8_t *)&controlData, sizeof(controlData));
-    esp_now_send(slaveMacs[2], (uint8_t *)&controlData, sizeof(controlData));
-    Serial.println("---------------------------------------------------------------------------------------------------------------------------------------------------------");
-    speedData.speed = speed;
+void vorwaerts() {
+  if (!abfahrt) {
+    Serial.println("vorwaerts");
+    megaSerial.println("vorwaerts");
+    controlData.fahrtrichtung = true;
+  } else {
+    nothalt();
   }
-  if (speedDelay.justFinished()) {
-    speedData.id = 2;
-    esp_now_send(slaveMacs[0], (uint8_t *)&speedData, sizeof(speedData));
-    esp_now_send(slaveMacs[2], (uint8_t *)&speedData, sizeof(speedData));
-    speedDelay.restart();
+}
+
+void rueckwaerts() {
+  if (!abfahrt) {
+    Serial.println("rueckwaerts");
+    megaSerial.println("rueckwaerts");
+    controlData.fahrtrichtung = false;
+  } else {
+    nothalt();
   }
-  digitalWrite(D5,LOW);
+}
+
+void abfahrt() {
+  Serial.println("abfahrt");
+  megaSerial.println("abfahrt");
+  isAbfahrt = true;
+  controlData.abfahrt = true;
+}
+
+void halt() {
+  if (nothaltStatus == 0) {
+    Serial.println("halt");
+    megaSerial.println("halt");
+    controlData.nothalt = 1;
+    controlData.abfahrt = false;
+    isAbfahrt = false;
+    isAnwurf = false;
+  }
+}
+
+void nothalt() {
+  Serial.println("nothalt");
+  megaSerial.println("nothalt");
+  nothaltStatus = 3;
+  controlData.nothalt = 3;
+  controlData.abfahrt = false;
+  isAbfahrt = false;
+  isAnwurf = false;
 }
