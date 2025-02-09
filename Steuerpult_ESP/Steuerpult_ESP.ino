@@ -187,11 +187,13 @@ void loop() {
       Serial.println("Nachricht vom PC empfangen: " + message);
       command = split(message, ':', 0);
       value = split(message, ':', 1);
+      value.trim();
     } else if (megaSerial.available()) {
       message = megaSerial.readStringUntil('\n');
       Serial.println("Nachricht vom Mega empfangen: " + message);
       command = split(message, ':', 0);
       value = split(message, ':', 1);
+      value.trim();
     }
 
     if (command == "42") {  // anwurf
@@ -237,16 +239,17 @@ void loop() {
 }
 
 void anwurf() {
-  Serial.println("anwurf");
-  megaSerial.println("anwurf");
-  isAnwurf = true;
-  isAbfahrt = false;
-  controlData.abfahrt = false;
-  controlData.nothalt = 0;
+  if (!isAbfahrt) {
+    Serial.println("anwurf");
+    megaSerial.println("anwurf");
+    isAnwurf = true;
+    controlData.abfahrt = false;
+    controlData.nothalt = 0;
+  }
 }
 
 void vorwaerts() {
-  if (!abfahrt) {
+  if (!isAbfahrt) {
     Serial.println("vorwaerts");
     megaSerial.println("vorwaerts");
     controlData.fahrtrichtung = true;
@@ -256,7 +259,7 @@ void vorwaerts() {
 }
 
 void rueckwaerts() {
-  if (!abfahrt) {
+  if (!isAbfahrt) {
     Serial.println("rueckwaerts");
     megaSerial.println("rueckwaerts");
     controlData.fahrtrichtung = false;

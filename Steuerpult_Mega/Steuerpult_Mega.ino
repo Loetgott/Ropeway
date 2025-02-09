@@ -87,21 +87,41 @@ void loop() {
       Serial.println((String)i + ":false");
     }
   }
-  if (Serial1.available()) {
-    String message = Serial1.readStringUntil('\n');
-    Serial.println("Nachricht vom ESP empfangen: " + message);
-    if (message == "anwurf") {
-      anwurf();
-    } else if (message == "abfahrt") {
-      abfahrt();
-    } else if (message == "rueckwaerts") {
-      rueckwaerts();
-    } else if (message == "vorwaerts") {
-      vorwaerts();
-    } else if (message == "halt") {
-      halt();
-    } else if (message == "nothalt") {
-      nothalt();
+  if (Serial1.available() || Serial.available()) {
+    if (Serial1.available()) {
+      String message = Serial1.readStringUntil('\n');
+      message.trim();
+      Serial.println("Nachricht vom ESP empfangen: " + message);
+      if (message == "anwurf") {
+        anwurf();
+      } else if (message == "abfahrt") {
+        abfahrt();
+      } else if (message == "rueckwaerts") {
+        rueckwaerts();
+      } else if (message == "vorwaerts") {
+        vorwaerts();
+      } else if (message == "halt") {
+        halt();
+      } else if (message == "nothalt") {
+        nothalt();
+      }
+    } else if (Serial.available()){
+      String message = Serial.readStringUntil('\n');
+      message.trim();
+      Serial.println("Nachricht vom PC empfangen: " + message);
+      if (message == "anwurf") {
+        anwurf();
+      } else if (message == "abfahrt") {
+        abfahrt();
+      } else if (message == "rueckwaerts") {
+        rueckwaerts();
+      } else if (message == "vorwaerts") {
+        vorwaerts();
+      } else if (message == "halt") {
+        halt();
+      } else if (message == "nothalt") {
+        nothalt();
+      }
     }
   }
   if (isAnwurf && !isAbfahrt) {
@@ -124,18 +144,22 @@ void anwurf() {
   isNothalt = false;
   isAnwurf = true;
   digitalWrite(anwurfLED, HIGH);
+  digitalWrite(nothaltLED,LOW);
+  digitalWrite(haltLED,LOW);
 }
 
 void vorwaerts() {
   isRueckwaerts = false;
   isVorwaerts = true;
   digitalWrite(vorwaertsLED, HIGH);
+  digitalWrite(rueckwaertsLED, LOW);
 }
 
 void rueckwaerts() {
   isVorwaerts = false;
   isRueckwaerts = true;
   digitalWrite(rueckwaertsLED, HIGH);
+  digitalWrite(vorwaertsLED, LOW);
 }
 
 void abfahrt() {
@@ -147,9 +171,11 @@ void abfahrt() {
 void halt() {
   isHalt = true;
   digitalWrite(haltLED, HIGH);
+  digitalWrite(abfahrtLED,LOW);
 }
 
 void nothalt() {
   isNothalt = true;
   digitalWrite(nothaltLED, HIGH);
+  digitalWrite(abfahrtLED,LOW);
 }
