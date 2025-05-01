@@ -7,9 +7,9 @@
 #define BRStepperPin D4
 #define dirPin D3
 
-#define initialSpeed 10000  // Anfangsgeschwindigkeit
+#define initialSpeed 15000  // Anfangsgeschwindigkeit
 #define reducedSpeed 500   // Reduzierte Geschwindigkeit, wenn das Ziel näher rückt
-#define acceleration 400     // Beschleunigung
+#define acceleration 1000     // Beschleunigung
 
 AccelStepper UFRStepper(1, UFRStepperPin, dirPin);
 AccelStepper UFLStepper(1, UFLStepperPin, dirPin);
@@ -35,11 +35,11 @@ void setup() {
   BRStepper.setAcceleration(acceleration);
 
   // Zielpositionen festlegen, um die Bewegung zu starten
-  UFRStepper.move(100000);
-  UFLStepper.move(100000);
-  UFHStepper.move(100000);
-  BLStepper.move(100000);
-  BRStepper.move(100000);
+  UFRStepper.move(1000000);
+  UFLStepper.move(1000000);
+  UFHStepper.move(1000000);
+  BLStepper.move(1000000);
+  BRStepper.move(1000000);
 }
 
 void loop() {

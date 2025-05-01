@@ -2,12 +2,13 @@
 
 void setup() {
   Serial.begin(115200);
-  WiFi.mode(WIFI_STA);  // Setze den Modus auf Station (Client)
-  Serial.println();
-  
-  // Zeigt die MAC-Adresse des Wemos D1 Mini an
-  Serial.print("MAC-Adresse: ");
+  WiFi.mode(WIFI_STA);  // Setze den Modus auf Station
+
+  // Zeige die MAC-Adresse des WLAN-Interfaces an
+  Serial.print("MAC-Adresse (WLAN): ");
   Serial.println(WiFi.macAddress());
+  
+  Serial.println();
 }
 
 void loop() {
